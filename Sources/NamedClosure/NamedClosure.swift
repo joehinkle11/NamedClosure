@@ -34,6 +34,19 @@ public struct NamedClosure<R> {
         self.type = type
         self.call = call
     }
+
+    /// The type of the closure as a string, or `nil` for free functions
+    public var typeString: String? {
+        return type.map { String(describing: $0) }
+    }
+
+    /// The name of the closure as a string
+    public var typeAndNameString: String {
+        if let type = type {
+            return "\(type).\(name)"
+        }
+        return name
+    }
 }
 
 /// A macro that creates a `NamedClosure` from a function or method call.
