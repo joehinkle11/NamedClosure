@@ -10,7 +10,7 @@
 /// // closure.type == MyClass.self (or inferred type)
 /// // closure.call() executes obj.doSomething(...)
 /// ```
-public struct NamedClosure {
+public struct NamedClosure<R> {
     /// The name of the function or method
     public let name: String
     
@@ -18,7 +18,7 @@ public struct NamedClosure {
     public let type: Any.Type?
     
     /// A closure that wraps the function call
-    public let call: () -> Void
+    public let call: () -> R
     
     /// Initializes a NamedClosure with the required fields
     /// - Parameters:
@@ -28,7 +28,7 @@ public struct NamedClosure {
     public init(
         name: String,
         type: Any.Type?,
-        call: @escaping () -> Void
+        call: @escaping () -> R
     ) {
         self.name = name
         self.type = type
@@ -50,4 +50,4 @@ public struct NamedClosure {
 /// closure.call() // Executes myObject.doSomething(...)
 /// ```
 @freestanding(expression)
-public macro namedClosure(_ expression: Any) -> NamedClosure = #externalMacro(module: "NamedClosureMacros", type: "NamedClosureMacro")
+public macro namedClosure<R>(_ expression: R) -> NamedClosure<R> = #externalMacro(module: "NamedClosureMacros", type: "NamedClosureMacro")

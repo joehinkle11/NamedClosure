@@ -10,7 +10,8 @@ import NamedClosure
     let namedClosure = #namedClosure(freeFunction())
     #expect(namedClosure.type == nil)
     #expect(namedClosure.name == "freeFunction")
-    namedClosure.call()
+    let returnedValue: () = namedClosure.call()
+    #expect(returnedValue == ())
     #expect(didCallFreeFunc == true)
 }
 
@@ -26,6 +27,17 @@ import NamedClosure
     let namedClosure = #namedClosure(c.m())
     #expect(namedClosure.type == C.self)
     #expect(namedClosure.name == "m")
-    namedClosure.call()
+    let returnedValue: () = namedClosure.call()
+    #expect(returnedValue == ())
     #expect(c.didCallM == true)
+}
+
+
+@Test func `returnedValue as Int`() {
+    func freeFunction() -> Int {
+        return 5
+    }
+    let namedClosure = #namedClosure(freeFunction())
+    let returnedValue: Int = namedClosure.call()
+    #expect(returnedValue == 5)
 }

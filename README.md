@@ -44,6 +44,20 @@ print(closure.type)  // nil
 closure.call()       // Executes processData()
 ```
 
+### Typed Return Value
+
+```swift
+func calculateValue() -> Int {
+    return 42
+}
+
+let closure = #namedClosure(calculateValue())
+let returnedValue: Int = closure.call()
+
+print(closure.name)  // "calculateValue"
+print(returnedValue)  // 42
+```
+
 ## Why it's useful
 
 - **Delayed execution**: Capture calls to execute later
