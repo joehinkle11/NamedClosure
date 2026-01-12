@@ -1,7 +1,40 @@
 import SwiftCompilerPlugin
+import SwiftDiagnostics
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
+
+/// Error messages for the NamedClosure macro
+enum NamedClosureMacroError: DiagnosticMessage {
+    case missingArgument
+    case expectedFunctionCall
+    case unsupportedExpression
+    case unsupportedCallType
+    case missingBaseExpression
+    
+    var message: String {
+        switch self {
+        case .missingArgument:
+            return "#namedClosure requires a function or method call argument"
+        case .expectedFunctionCall:
+            return "#namedClosure requires a function or method call (not a property access or method reference)"
+        case .unsupportedExpression:
+            return "#namedClosure only supports function and method calls"
+        case .unsupportedCallType:
+            return "#namedClosure only supports instance method calls and free function calls"
+        case .missingBaseExpression:
+            return "Instance method call must have a base expression"
+        }
+    }
+    
+    var diagnosticID: MessageID {
+        MessageID(domain: "NamedClosureMacros", id: String(describing: self))
+    }
+    
+    var severity: DiagnosticSeverity {
+        .error
+    }
+}
 
 /// Implementation of the `namedClosure` macro, which takes a function or method call
 /// and produces a `NamedClosure` instance containing the name, type, and call.
@@ -15,7 +48,12 @@ public struct NamedClosureMacro: ExpressionMacro {
         in context: some MacroExpansionContext
     ) -> ExprSyntax {
         guard let argument = node.arguments.first?.expression else {
-            // For now, just return an error expression - diagnostics can be added later
+            context.diagnose(
+                Diagnostic(
+                    node: node,
+                    message: NamedClosureMacroError.missingArgument
+                )
+            )
             return ExprSyntax(stringLiteral: "NamedClosure(name: \"\", type: nil, call: {})")
         }
         
@@ -26,11 +64,22 @@ public struct NamedClosureMacro: ExpressionMacro {
         
         // Try to parse as a member access (property or method without call)
         if argument.as(MemberAccessExprSyntax.self) != nil {
-            // This is a property access or method reference without call - error case
+            context.diagnose(
+                Diagnostic(
+                    node: argument,
+                    message: NamedClosureMacroError.expectedFunctionCall
+                )
+            )
             return ExprSyntax(stringLiteral: "NamedClosure(name: \"\", type: nil, call: {})")
         }
         
         // Unsupported expression type
+        context.diagnose(
+            Diagnostic(
+                node: argument,
+                message: NamedClosureMacroError.unsupportedExpression
+            )
+        )
         return ExprSyntax(stringLiteral: "NamedClosure(name: \"\", type: nil, call: {})")
     }
     
@@ -49,6 +98,12 @@ public struct NamedClosureMacro: ExpressionMacro {
         }
         
         // Unsupported call type
+        context.diagnose(
+            Diagnostic(
+                node: functionCall.calledExpression,
+                message: NamedClosureMacroError.unsupportedCallType
+            )
+        )
         return ExprSyntax(stringLiteral: "NamedClosure(name: \"\", type: nil, call: {})")
     }
     
@@ -58,6 +113,12 @@ public struct NamedClosureMacro: ExpressionMacro {
         in context: some MacroExpansionContext
     ) -> ExprSyntax {
         guard let base = memberAccess.base else {
+            context.diagnose(
+                Diagnostic(
+                    node: memberAccess,
+                    message: NamedClosureMacroError.missingBaseExpression
+                )
+            )
             return ExprSyntax(stringLiteral: "NamedClosure(name: \"\", type: nil, call: {})")
         }
         
